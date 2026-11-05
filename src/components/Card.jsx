@@ -1,16 +1,23 @@
-
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { img, tk2 } from '../api.js';
+import './card.css';
 
-// Product image
+// Product image (load fail korle gradient fallback dekhay)
 export const Thumb = ({ p, cls = '' }) => {
-  return p.image ? (
+  const [bad, setBad] = useState(false);
+  useEffect(() => setBad(false), [p.image]);
+
+  return p.image && !bad ? (
     <img
       src={img(p.image)}
       alt={p.title}
       loading="lazy"
       className={'shop-thumb ' + cls}
+      onError={e => {
+        console.warn('Image load failed:', e.currentTarget.src);
+        setBad(true);
+      }}
     />
   ) : (
     <div
@@ -65,7 +72,7 @@ export const Rv = ({ children, d = 0, className = '' }) => {
   );
 };
 
-// Loading skeleton
+// Loading skeleton (card er moto same structure)
 export const Skel = ({ n = 8 }) => (
   <div className="shop-grid shop-skeleton-grid">
     {Array.from({ length: n }, (_, i) => (
@@ -82,125 +89,107 @@ export const Skel = ({ n = 8 }) => (
   </div>
 );
 
+const Arrow = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width="15"
+    height="15"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+
 // Product Card
-export default function Card({ p, i = 0 }) {
-
-  const tilt = e => {
-    if (window.innerWidth < 768) return;
-
-    const b = e.currentTarget.getBoundingClientRect();
-
-    const x = (e.clientX - b.left) / b.width - 0.5;
-    const y = (e.clientY - b.top) / b.height - 0.5;
-
-    e.currentTarget.style.setProperty('--shop-ry', x * 3 + 'deg');
-    e.currentTarget.style.setProperty('--shop-rx', -y * 3 + 'deg');
-  };
-
-  const reset = e => {
-    e.currentTarget.style.setProperty('--shop-ry', '0deg');
-    e.currentTarget.style.setProperty('--shop-rx', '0deg');
-  };
+export default function Card({ p, i = 0, onQuick }) {
+  // Cut-off price: tomar API te field er nam onno hole ei line change koro
+  const old = p.mrp || p.oldPrice || 0;
+  const off = old > p.price ? Math.round(((old - p.price) / old) * 100) : 0;
+  const href = '/product/' + p.slug;
 
   return (
-    <Rv
-      d={(i % 4) * 60}
-      className="shop-card-reveal"
-    >
-      <article
-        className="shop-product-card"
-        onMouseMove={tilt}
-        onMouseLeave={reset}
-      >
-
+    <Rv d={(i % 4) * 60} className="shop-card-reveal">
+      <article className="shop-product-card">
         {/* IMAGE */}
-        <Link
-          to={'/product/' + p.slug}
-          className="shop-card-image"
-          aria-label={`View ${p.title}`}
-        >
+        <div className="shop-card-image">
+          <Link to={href} className="shop-card-imglink" aria-label={`${p.title} দেখুন`}>
+            <Thumb p={p} />
+          </Link>
 
-          <Thumb p={p} />
+          <span className="shop-card-shade" aria-hidden="true" />
 
-          {/* Featured */}
-          {p.featured && (
-            <span className="shop-featured">
-              ★
-            </span>
-          )}
+          {/* Discount tag (top-left) */}
+          {off > 0 && <span className="shop-off">-{off}%</span>}
 
-          {/* MOQ */}
-          <span className="shop-moq">
-            MOQ: {p.minQty || 1} {p.unit || 'pcs'}
-          </span>
-
-          {/* View icon */}
-          <span className="shop-view">
+          {/* Quick inquiry (top-right) */}
+          <button
+            type="button"
+            className="shop-icon-btn shop-quick"
+            aria-label="Quick inquiry"
+            onClick={() => onQuick && onQuick(p)}
+          >
             <svg
               viewBox="0 0 24 24"
+              width="15"
+              height="15"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
-              width="19"
-              height="19"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />
+              <path d="M9 11h6M9 14h4" />
+            </svg>
+          </button>
+
+          {/* View (bottom-right, desktop hover only) */}
+          <Link to={href} className="shop-icon-btn shop-view" aria-label="দেখুন">
+            <svg
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
             >
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-          </span>
+          </Link>
+        </div>
 
-        </Link>
-
-        {/* PRODUCT DETAILS */}
+        {/* BODY */}
         <div className="shop-card-body">
-
           {p.category?.name && (
-            <span className="shop-card-category">
-              {p.category.name}
-            </span>
+            <span className="shop-card-category">{p.category.name}</span>
           )}
 
-          <Link
-            to={'/product/' + p.slug}
-            className="shop-card-title"
-          >
+          <Link to={href} className="shop-card-title">
             {p.title}
           </Link>
 
-          <div className="shop-card-price">
-
-            <span className="shop-price-value">
-              {tk2(p.price)}
-            </span>
-
-            <span className="shop-price-unit">
-              / {p.pricing === 'area' ? 'sq ft' : p.unit || 'pcs'}
-            </span>
-
+          {/* price + MOQ row */}
+          <div className="shop-card-meta">
+            <div className="shop-card-price">
+              <span className="shop-price-value">{tk2(p.price)}</span>
+              {old > p.price && <span className="shop-price-old">{tk2(old)}</span>}
+            </div>
+            <span className="shop-moq">MOQ {p.minQty || 1}</span>
           </div>
 
-          {/* PRODUCT ACTION */}
-          <Link
-            to={'/product/' + p.slug}
-            className="shop-card-action"
-          >
-            VIEW PRODUCT
-
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-
+          <Link to={href} className="shop-card-action">
+            <span>অর্ডার করুন</span>
+            <i className="shop-card-action-ic">
+              <Arrow />
+            </i>
           </Link>
-
         </div>
-
       </article>
     </Rv>
   );

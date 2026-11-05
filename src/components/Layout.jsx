@@ -1,3 +1,4 @@
+
 import {Link,NavLink,Outlet,useLocation} from 'react-router-dom';
 import {useEffect,useRef,useState} from 'react';
 import {api} from '../api.js';
@@ -5,7 +6,30 @@ import {useCart} from '../cart.jsx';
 import {useSettings,wa} from '../settings.jsx';
 import '../home.css';
 import '../pages.css';
+import './layout-icons.css'; // <-- notun (path tomar folder structure onujayi thik koro)
 import printingLogo from './printing.jpg';
+
+// ---------- ICONS ----------
+const CartIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 7h12l1 13H5L6 7Z" />
+    <path d="M9 10V6a3 3 0 0 1 6 0v4" />
+  </svg>
+);
+
+const UpIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+);
+
+const WaIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.9L2 22l5.25-1.4A9.9 9.9 0 1 0 12.04 2Zm0 18.1c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3.1.8.8-3-.2-.3a8.1 8.1 0 1 1 6.9 3.8Zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.1 0-.3 0-.4l-.7-1.6c-.2-.4-.4-.4-.5-.4h-.4c-.2 0-.4.1-.6.3-.6.6-.9 1.3-.9 2.1 0 .9.4 1.8 1 2.6 1.1 1.5 2.4 2.6 4 3.3 1.5.6 2.1.6 2.9.5.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.1l-.5-.2Z"/>
+  </svg>
+);
 
 // LOGO
 export const Logo = () => {
@@ -130,14 +154,6 @@ export default function Layout(){
         </div>
       )}
 
-      {/* TOP INFO */}
-      <div className="hp-info">
-        <div className="hp-wrap flex flex-wrap justify-between gap-2">
-          <span>📞 {s.phone}</span>
-          <span>🕘 {s.hours}</span>
-        </div>
-      </div>
-
       {/* HEADER */}
       <header className={'hp-head'+(sc>1?' sc':'')}>
 
@@ -170,25 +186,28 @@ export default function Layout(){
             {/* CART */}
             <Link
               to="/cart"
-              className={
-                'hp-btn hp-btn-out hp-cartb !py-2'+
-                (bump?' hp-bump':'')
-              }
+              aria-label={'কার্ট'+(items.length?` (${items.length})`:'')}
+              className={'lx-cart'+(bump?' lx-bump':'')}
             >
-              🛒 কার্ট
+              <CartIcon/>
+              <span className="lx-cart-label">কার্ট</span>
 
               {items.length>0&&(
-                <b>{items.length}</b>
+                <b className="lx-cart-badge">{items.length>99?'99+':items.length}</b>
               )}
             </Link>
 
             {/* MOBILE MENU */}
             <button
-              className="hp-btn hp-btn-out !p-2.5 md:hidden"
+              type="button"
+              className={'lx-menu md:hidden'+(open?' is-open':'')}
               aria-label="Menu"
+              aria-expanded={open}
               onClick={()=>setOpen(!open)}
             >
-              {open?'✕':'☰'}
+              <span className="lx-burger" aria-hidden="true">
+                <i/><i/><i/>
+              </span>
             </button>
 
           </div>
@@ -197,7 +216,8 @@ export default function Layout(){
 
       {/* MAIN CONTENT */}
       <main className="flex-1" key={pathname}>
-        <div style={{animation:'hp-drop .5s both'}}>
+        {/* opacity-only animation: transform dile position:fixed (sticky order bar) bhenge jay */}
+        <div className="hp-page">
           <Outlet/>
         </div>
       </main>
@@ -307,32 +327,34 @@ export default function Layout(){
 
       </footer>
 
-      {/* BACK TO TOP */}
-      <button
-        aria-label="Top"
-        onClick={()=>
-          window.scrollTo({
-            top:0,
-            behavior:'smooth'
-          })
-        }
-        className={'hp-top'+(sc>12?'':' off')}
-      >
-        ↑
-      </button>
-
-      {/* WHATSAPP FLOAT */}
-      {s.whatsappFloat&&(
-        <a
-          href={wa(s)}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="WhatsApp"
-          className="hp-fab wa"
+      {/* FLOATING STACK: Back to top + WhatsApp */}
+      <div className="lx-fabs">
+        <button
+          type="button"
+          aria-label="Top"
+          onClick={()=>
+            window.scrollTo({
+              top:0,
+              behavior:'smooth'
+            })
+          }
+          className={'lx-fab lx-top'+(sc>12?'':' off')}
         >
-          💬
-        </a>
-      )}
+          <UpIcon/>
+        </button>
+
+        {s.whatsappFloat&&(
+          <a
+            href={wa(s)}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="WhatsApp"
+            className="lx-fab lx-wa"
+          >
+            <WaIcon/>
+          </a>
+        )}
+      </div>
 
     </div>
   );

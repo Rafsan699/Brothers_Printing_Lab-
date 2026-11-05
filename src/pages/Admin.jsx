@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from 'react';
-import {api,API,tk,tk2,uploadFile} from '../api.js';
+import {api,img,tk,tk2,uploadFile} from '../api.js';
 import {Logo} from '../components/Layout.jsx';
 
 const STAT=['Pending','Confirmed','Designing','Printing','Ready','Delivered','Cancelled'];
@@ -24,14 +24,14 @@ function Pairs({v,set,ph}){const rows=Array.isArray(v)?v:[];const ch=(i,k,x)=>se
   <button type="button" className="btn-o !py-1" onClick={()=>set([...rows,{a:'',b:''}])}>+ যোগ করুন</button></div>}
 
 // field = [key, label, type, extra]   type: text|textarea|number|color|date|image|bool|select|pairs
-function Input({f,v,set}){const [,label,type='text',extra]=f;
- const up=async e=>{const file=e.target.files[0];if(file)try{set(API+await uploadFile(file))}catch(x){alert(x.message)}};
+function Input({f,v,set}){const [,label,type='text',extra]=f;const [busy,setBusy]=useState(false);
+ const up=async e=>{const file=e.target.files[0];if(!file)return;setBusy(true);try{set(await uploadFile(file))}catch(x){alert(x.message)}setBusy(false)};
  if(type==='bool')return <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={!!v} onChange={e=>set(e.target.checked)}/>{label}</label>;
  const wide=type==='textarea'||type==='pairs';
  return <div className={'text-sm '+(wide?'md:col-span-2':'')}><span className="mb-1 block text-ink/70">{label}</span>
   {type==='textarea'?<textarea rows="3" className="inp" value={v||''} onChange={e=>set(e.target.value)}/>
   :type==='select'?<select className="inp" value={v||extra[0][0]} onChange={e=>set(e.target.value)}>{extra.map(([a,b])=><option key={a} value={a}>{b}</option>)}</select>
-  :type==='image'?<div><input className="inp" placeholder="ছবির লিংক" value={v||''} onChange={e=>set(e.target.value)}/><input type="file" accept="image/*" className="mt-1" onChange={up}/>{v&&<img src={v} alt="" className="mt-1 h-16 rounded"/>}</div>
+  :type==='image'?<div><input className="inp" placeholder="ছবির লিংক" value={v||''} onChange={e=>set(e.target.value)}/><input type="file" accept="image/*" className="mt-1" onChange={up}/>{busy&&<span className="ml-2 text-xs">আপলোড হচ্ছে…</span>}{v&&<img src={img(v)} alt="" className="mt-1 h-16 rounded object-contain"/>}</div>
   :type==='pairs'?<Pairs v={v} set={set} ph={extra}/>
   :<input type={type==='number'?'number':type==='color'?'color':type==='date'?'date':'text'} className={'inp '+(type==='color'?'!p-1':'')} value={type==='date'&&v?String(v).slice(0,10):(v??'')} onChange={e=>set(type==='number'?e.target.value:e.target.value)}/>}</div>}
 
@@ -107,7 +107,7 @@ function Orders({S,onChange}){const [orders,setOrders]=useState([]),[fs,setFs]=u
    <div className="flex flex-wrap items-center justify-between gap-2"><div><b>{o.orderNo}</b> <span className="text-sm text-ink/60">{new Date(o.createdAt).toLocaleString('bn-BD')}</span></div>
     <select className="inp !w-auto" value={o.status} onChange={e=>patch(o,{status:e.target.value})}>{STAT.map(s=><option key={s}>{s}</option>)}</select></div>
    <div className="mt-2 text-sm"><b>{o.customer.name}</b> · <a className="text-cy" href={'tel:'+o.customer.phone}>{o.customer.phone}</a> · {o.customer.address} · {o.paymentMethod}</div>
-   <ul className="mt-2 text-sm">{o.items.map((i,k)=><li key={k}>• {i.title} {i.pricing==='area'?`(${i.width}×${i.height} ft)`:''} × {i.qty} = {tk2(i.lineTotal)} {Object.values(i.options||{}).join(', ')} {i.note&&`— “${i.note}”`} {i.designFile&&<a className="text-cy underline" target="_blank" rel="noreferrer" href={API+i.designFile}>ডিজাইন ফাইল</a>}</li>)}</ul>
+   <ul className="mt-2 text-sm">{o.items.map((i,k)=><li key={k}>• {i.title} {i.pricing==='area'?`(${i.width}×${i.height} ft)`:''} × {i.qty} = {tk2(i.lineTotal)} {Object.values(i.options||{}).join(', ')} {i.note&&`— “${i.note}”`} {i.designFile&&<a className="text-cy underline" target="_blank" rel="noreferrer" href={img(i.designFile)}>ডিজাইন ফাইল</a>}</li>)}</ul>
    {o.note&&<p className="text-sm">কাস্টমারের নোট: {o.note}</p>}
    <div className="mt-1 text-sm text-ink/70">{o.discount>0&&<>ছাড় ({o.coupon}): -{tk2(o.discount)} · </>}ডেলিভারি: {tk2(o.delivery||0)}</div>
    <div className="mt-1 flex flex-wrap items-center gap-4"><span className="font-bold">মোট: {tk2(o.total)}</span>
@@ -120,12 +120,13 @@ function Orders({S,onChange}){const [orders,setOrders]=useState([]),[fs,setFs]=u
 const blank={title:'',category:'',price:'',unit:'pcs',pricing:'unit',minQty:1,description:'',image:'',optionsText:'',featured:false};
 const parseOpts=t=>t.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const[n,v='']=l.split(':');return{name:n.trim(),values:v.split(',').map(s=>s.trim()).filter(Boolean)}}).filter(o=>o.values.length);
 const optsText=o=>(o||[]).map(x=>x.name+': '+x.values.join(', ')).join('\n');
-function Products(){const [prods,setProds]=useState([]),[cats,setCats]=useState([]),[form,setForm]=useState(null),[msg,setMsg]=useState(''),[q,setQ]=useState('');
+function Products(){const [prods,setProds]=useState([]),[cats,setCats]=useState([]),[form,setForm]=useState(null),[msg,setMsg]=useState(''),[q,setQ]=useState(''),[upl,setUpl]=useState(false);
  const load=useCallback(()=>{A('/api/admin/products').then(setProds);api('/api/categories').then(setCats)},[]);useEffect(()=>{load()},[load]);
  const fail=x=>setMsg(x.message);
  const saveP=async e=>{e.preventDefault();setMsg('');const b={...clean(form),price:Number(form.price),minQty:Number(form.minQty)||1,options:parseOpts(form.optionsText)};delete b.optionsText;delete b.slug;
   try{form._id?await A('/api/admin/products/'+form._id,{method:'PUT',body:b}):await A('/api/admin/products',{method:'POST',body:b});setForm(null);load()}catch(x){fail(x)}};
  const edit=(p,copy)=>setForm({...p,_id:copy?undefined:p._id,title:copy?p.title+' (কপি)':p.title,category:p.category?._id||p.category,optionsText:optsText(p.options)});
+ const pick=async e=>{const file=e.target.files[0];if(!file)return;setUpl(true);try{const url=await uploadFile(file);setForm(f=>({...f,image:url}))}catch(x){fail(x)}setUpl(false)};
  const list=prods.filter(p=>!q||p.title.toLowerCase().includes(q.toLowerCase()));
  return <div>{msg&&<p className="mb-3 text-ma">{msg}</p>}
   {!form&&<div className="mb-4 flex gap-2"><button className="btn" onClick={()=>setForm({...blank,category:cats[0]?._id||''})}>+ নতুন পণ্য</button><input className="inp !w-56" placeholder="পণ্য খুঁজুন" value={q} onChange={e=>setQ(e.target.value)}/></div>}
@@ -135,13 +136,13 @@ function Products(){const [prods,setProds]=useState([]),[cats,setCats]=useState(
    <input required type="number" min="0" className="inp" placeholder="দাম (৳)" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/>
    <input className="inp" placeholder="ইউনিট (pcs / sq ft)" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
    <input type="number" min="1" className="inp" placeholder="ন্যূনতম পরিমাণ" value={form.minQty} onChange={e=>setForm({...form,minQty:e.target.value})}/>
-   <div><input className="inp" placeholder="ছবির লিংক" value={form.image||''} onChange={e=>setForm({...form,image:e.target.value})}/><input type="file" accept="image/*" className="mt-1 text-sm" onChange={async e=>{if(e.target.files[0])try{setForm({...form,image:API+await uploadFile(e.target.files[0])})}catch(x){fail(x)}}}/></div>
+   <div><input className="inp" placeholder="লোগো / ছবির লিংক" value={form.image||''} onChange={e=>setForm({...form,image:e.target.value})}/><input type="file" accept="image/*" className="mt-1 text-sm" onChange={pick}/>{upl&&<span className="ml-2 text-xs">আপলোড হচ্ছে…</span>}{form.image&&<img src={img(form.image)} alt="" className="mt-1 h-16 rounded object-contain"/>}</div>
    <textarea rows="2" className="inp md:col-span-2" placeholder="বর্ণনা" value={form.description||''} onChange={e=>setForm({...form,description:e.target.value})}/>
    <textarea rows="3" className="inp md:col-span-2" placeholder={'অপশন (প্রতি লাইনে একটি)\nসাইজ: S, M, L, XL\nরঙ: সাদা, কালো'} value={form.optionsText} onChange={e=>setForm({...form,optionsText:e.target.value})}/>
    <label className="flex items-center gap-2"><input type="checkbox" checked={!!form.featured} onChange={e=>setForm({...form,featured:e.target.checked})}/> হোমপেজে দেখান</label>
    <label className="flex items-center gap-2"><input type="checkbox" checked={form.active!==false} onChange={e=>setForm({...form,active:e.target.checked})}/> সক্রিয়</label>
-   <div className="flex gap-2 md:col-span-2"><button className="btn">সংরক্ষণ</button><button type="button" className="btn-o" onClick={()=>setForm(null)}>বাতিল</button></div></form>}
-  <div className="overflow-x-auto rounded-lg bg-white"><table className="w-full text-left text-sm"><tbody>{list.map(p=><tr key={p._id} className="border-b last:border-0"><td className="p-3 font-medium">{p.title}{!p.active&&' (বন্ধ)'}{p.featured&&' ⭐'}</td><td className="p-3">{p.category?.name}</td><td className="p-3">{tk2(p.price)}/{p.unit}</td>
+   <div className="flex gap-2 md:col-span-2"><button className="btn" disabled={upl}>সংরক্ষণ</button><button type="button" className="btn-o" onClick={()=>setForm(null)}>বাতিল</button></div></form>}
+  <div className="overflow-x-auto rounded-lg bg-white"><table className="w-full text-left text-sm"><tbody>{list.map(p=><tr key={p._id} className="border-b last:border-0"><td className="p-3 font-medium">{p.image&&<img src={img(p.image)} alt="" className="mr-2 inline-block h-8 w-8 rounded object-cover align-middle"/>}{p.title}{!p.active&&' (বন্ধ)'}{p.featured&&' ⭐'}</td><td className="p-3">{p.category?.name}</td><td className="p-3">{tk2(p.price)}/{p.unit}</td>
    <td className="p-3 text-right"><button className="mr-3 text-cy" onClick={()=>edit(p)}>এডিট</button><button className="mr-3 text-cy" onClick={()=>edit(p,true)}>কপি</button><button className="text-ma" onClick={async()=>{if(confirm('মুছে ফেলবেন?')){await A('/api/admin/products/'+p._id,{method:'DELETE'});load()}}}>মুছুন</button></td></tr>)}</tbody></table></div></div>}
 
 /* ---------- Messages ---------- */
@@ -171,16 +172,16 @@ export default function Admin(){
    {tab==='dash'&&<Dash st={st}/>}
    {tab==='orders'&&<Orders S={S} onChange={loadStats}/>}
    {tab==='products'&&<Products/>}
-   {tab==='cats'&&<Crud path="categories" addLabel="+ নতুন ক্যাটেগরি" blank={{name:'',icon:'',color:'#00a6d6',description:'',order:0}}
-     fields={[['name','নাম'],['icon','আইকন অক্ষর'],['color','রঙ','color'],['order','ক্রম (ছোট আগে)','number'],['description','বর্ণনা','textarea']]}
-     show={c=><span><i className="mr-2 inline-block h-3 w-3 rounded-full" style={{background:c.color}}/>{c.name}</span>}/>}
+   {tab==='cats'&&<Crud path="categories" addLabel="+ নতুন ক্যাটেগরি" blank={{name:'',image:'',description:'',order:0}}
+     fields={[['name','নাম'],['image','লোগো / ছবি','image'],['order','ক্রম (ছোট আগে)','number'],['description','বর্ণনা','textarea']]}
+     show={c=><span className="flex items-center gap-3">{c.image?<img src={img(c.image)} alt="" className="h-10 w-10 rounded object-cover"/>:<span className="inline-block h-10 w-10 rounded bg-ink/10"/>}{c.name}</span>}/>}
    {tab==='site'&&<SiteSettings onSaved={setS}/>}
    {tab==='banners'&&<Crud path="banners" addLabel="+ নতুন ব্যানার" blank={{title:'',subtitle:'',image:'',link:'',order:0,active:true}}
      fields={[['title','শিরোনাম'],['subtitle','সাবটাইটেল'],['image','ছবি','image'],['link','লিংক'],['order','ক্রম','number'],['active','সক্রিয়','bool']]}
-     show={b=><span>{b.title} {!b.active&&'(বন্ধ)'}</span>}/>}
+     show={b=><span className="flex items-center gap-2">{b.image&&<img src={img(b.image)} alt="" className="h-10 w-14 rounded object-cover"/>}{b.title} {!b.active&&'(বন্ধ)'}</span>}/>}
    {tab==='gallery'&&<Crud path="gallery" addLabel="+ নতুন ছবি" blank={{title:'',image:'',order:0,active:true}}
      fields={[['title','ক্যাপশন'],['image','ছবি','image'],['order','ক্রম','number'],['active','সক্রিয়','bool']]}
-     show={g=><span className="flex items-center gap-2">{g.image&&<img src={g.image} alt="" className="h-10 w-14 rounded object-cover"/>}{g.title}</span>}/>}
+     show={g=><span className="flex items-center gap-2">{g.image&&<img src={img(g.image)} alt="" className="h-10 w-14 rounded object-cover"/>}{g.title}</span>}/>}
    {tab==='reviews'&&<Crud path="testimonials" addLabel="+ নতুন রিভিউ" blank={{name:'',role:'',text:'',rating:5,image:'',order:0,active:true}}
      fields={[['name','কাস্টমারের নাম'],['role','পরিচয় (যেমন: ব্যবসায়ী)'],['text','রিভিউ','textarea'],['rating','রেটিং (১-৫)','number'],['image','ছবি','image'],['order','ক্রম','number'],['active','সক্রিয়','bool']]}
      show={t=><span><b>{t.name}</b> {'★'.repeat(t.rating||0)} <span className="text-sm text-ink/60">{t.text?.slice(0,60)}</span></span>}/>}

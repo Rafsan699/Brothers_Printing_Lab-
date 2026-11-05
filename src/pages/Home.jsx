@@ -1,13 +1,19 @@
 import {useEffect,useRef,useState} from 'react';
 import {Link} from 'react-router-dom';
-import {api} from '../api.js';
+import {api,img} from '../api.js';
 import Card from '../components/Card.jsx';
-import {LAB} from '../lab.js';
 import '../home.css';
 
 /* ---------- helpers ---------- */
 const tk=n=>'৳'+Number(n||0).toLocaleString('en-IN');
-const img=s=>!s?'':(s.startsWith('http')||s.startsWith('data:')?s:(s.startsWith('/')?s:'/'+s));
+
+// chhobi load na hole fallback dekhay
+function Pic({src,alt='',label='',color='#4c3fa3',fit='cover',cls=''}){
+  const [bad,setBad]=useState(false);
+  useEffect(()=>setBad(false),[src]);
+  if(!src||bad)return <div style={{width:'100%',height:'100%',minHeight:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,fontWeight:800,color:'#fff',background:`linear-gradient(135deg,${color},#b46a9a)`}}>{label}</div>;
+  return <img src={img(src)} alt={alt} loading="lazy" className={cls} style={{objectFit:fit}} onError={e=>{console.warn('Image load failed:',e.currentTarget.src);setBad(true)}}/>;
+}
 
 // scroll reveal
 function Rv({children,className='',delay=0,as:T='div'}){
@@ -35,16 +41,16 @@ function Typing({text}){
 const Pill=({children})=><span className="hp-pill"><i/>{children}</span>;
 
 /* fallback content (DB te data na thakle) */
-const TRUST=['পরিষ্কার ও নিখুঁত ছাপা','বাংলাদেশে প্রিন্ট ও ডেলিভারি','দ্রুত ডেলিভারি','ফ্রি ডিজাইন পরামর্শ','বাজেট ফ্রেন্ডলি দাম','বাল্ক অর্ডারে ছাড়','ক্যাশ অন ডেলিভারি'];
+const TRUST=['পরিষ্কার ও নিখুঁত ছাপা','জামালপুর পৌরসভায় হোম ডেলিভারি','দ্রুত ডেলিভারি','ফ্রি ডিজাইন পরামর্শ','বাজেট ফ্রেন্ডলি দাম','বাল্ক অর্ডারে ছাড়','ক্যাশ অন ডেলিভারি'];
 const STEPS=[
   {t:'বেছে নিন, ক্লিক করুন',d:'সার্ভিস ও পণ্য বেছে সাইজ বা পরিমাণ দিন।',ic:'🛍️',s:'অর্ডার তৈরি হচ্ছে'},
   {t:'দ্রুত যোগাযোগ',d:'অফিস সময়ে লিখলে প্রায় একই দিনে আমরা কল করব।',ic:'📞',s:'আপনার সাথে কথা হচ্ছে'},
   {t:'ডিজাইন ফাইনাল ও অনুমোদন',d:'ডিজাইন দেখে অনুমোদন দিলেই প্রিন্ট শুরু।',ic:'🖨️',s:'প্রিন্টিং চলছে'},
-  {t:'ডেলিভারি বা সংগ্রহ',d:'প্রিন্ট শেষে দ্রুত হোম ডেলিভারি বা দোকান থেকে সংগ্রহ।',ic:'🚚',s:'ডেলিভারির পথে'}];
+  {t:'ডেলিভারি বা সংগ্রহ',d:'প্রিন্ট শেষে জামালপুর পৌরসভার ভেতরে হোম ডেলিভারি বা দোকান থেকে সংগ্রহ।',ic:'🚚',s:'ডেলিভারির পথে'}];
 const ADV=[
   {ic:'✨',t:'বাছাই করা কালেকশন',d:'শুধু পণ্য নয়, আপনার ব্র্যান্ডের জন্য ভালো মানের প্রিন্ট আইটেম।',to:'/services',l:'সব সার্ভিস দেখুন'},
   {ic:'🎨',t:'প্রিমিয়াম প্রিন্টিং',d:'স্ক্রিন প্রিন্ট, সাবলিমেশন, এমব্রয়ডারি – প্রতিটি লোগো থাকবে ঝকঝকে।',to:'/services',l:'প্রিন্টিং পদ্ধতি'},
-  {ic:'🚚',t:'সারা দেশে ডেলিভারি',d:'ঠিকানা দিন, আমরা পৌঁছে দেব। ডেলিভারি চার্জ চেকআউটে দেখতে পাবেন।',to:'/info',l:'ডেলিভারি তথ্য'},
+  {ic:'🚚',t:'জামালপুর পৌরসভায় হোম ডেলিভারি',d:'পৌরসভার ভেতরের ঠিকানায় আমরা পৌঁছে দেব। চার্জ, সময় ও নিয়ম এক নজরে দেখে নিন।',to:'/info',l:'ডেলিভারি তথ্য'},
   {ic:'🏪',t:'বাল্ক ও কর্পোরেট অর্ডার',d:'অফিস, ইভেন্ট ও দোকানের জন্য বড় অর্ডারে আলাদা দাম ও ডেডিকেটেড সাপোর্ট।',to:'/contact',l:'কোটেশন নিন'}];
 
 export default function Home(){
@@ -58,7 +64,6 @@ export default function Home(){
     api('/api/categories').then(setCats).catch(()=>{});
     api('/api/products?featured=1').then(setFeat).catch(()=>{});
     api('/api/products').then(setAll).catch(()=>{});
-    // ei endpoint gulo server.js e check kore nin
     ok(api('/api/banners')).then(d=>Array.isArray(d)&&setBan(d));
     ok(api('/api/testimonials')).then(d=>Array.isArray(d)&&setTms(d));
     ok(api('/api/gallery')).then(d=>Array.isArray(d)&&setGal(d));
@@ -74,8 +79,8 @@ export default function Home(){
   const festive=ban[0];
   const S=STEPS[step];
   const submit=async e=>{e.preventDefault();setSent('...');
-    try{const r=await fetch('/api/inquiries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(f)});
-      if(!r.ok)throw 0;setSent('ধন্যবাদ! আমরা শীঘ্রই যোগাযোগ করব।');setF({name:'',phone:'',message:''})}catch{setSent('পাঠানো যায়নি, আবার চেষ্টা করুন বা কল করুন।')}};
+    try{await api('/api/inquiries',{method:'POST',body:f});setSent('ধন্যবাদ! আমরা শীঘ্রই যোগাযোগ করব।');setF({name:'',phone:'',message:''})}
+    catch(x){setSent(x.message||'পাঠানো যায়নি, আবার চেষ্টা করুন বা কল করুন।')}};
 
   return <div className="hp">
 
@@ -99,7 +104,7 @@ export default function Home(){
         .map(([e,t,l,d],i)=><span key={i} className={'hp-ico hp-float '+d} style={{top:t,left:l}}>{e}</span>)}
       <div className="hp-chip hp-float" style={{top:'14%',left:'-6%'}}><span>👤</span><div><b className="block text-sm">ডেডিকেটেড সাপোর্ট</b><small className="text-[#16142b]/55">অর্ডার ম্যানেজার</small></div></div>
       <div className="hp-chip hp-float d2" style={{top:'8%',right:'-8%'}}><span>🎨</span><div><b className="block text-sm">ফ্রি ডিজাইন</b><small className="text-[#16142b]/55">পরামর্শ</small></div></div>
-      <div className="hp-chip hp-float d3" style={{bottom:'3%',right:'6%'}}><span>🚚</span><div><b className="block text-sm">দ্রুত ডেলিভারি</b><small className="text-[#16142b]/55">সাপোর্ট</small></div></div>
+      <div className="hp-chip hp-float d3" style={{bottom:'3%',right:'6%'}}><span>🚚</span><div><b className="block text-sm">দ্রুত ডেলিভারি</b><small className="text-[#16142b]/55">জামালপুর পৌরসভা</small></div></div>
     </div></div>
   </div></section>
 
@@ -110,14 +115,15 @@ export default function Home(){
     <div className="hp-mq mt-8"><div className="hp-mq-in">{[...TRUST,...TRUST].map((t,i)=><span key={i} className="hp-tag">✔ {t}</span>)}</div></div>
   </div></section>
 
-  {/* 3. CATEGORIES */}
+  {/* 3. CATEGORIES (ekhon category-r logo/chhobi dekhay) */}
   <section className="py-12"><div className="hp-wrap">
     <Rv className="flex items-end justify-between"><div><Pill>আমাদের সার্ভিস</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">ক্যাটাগরি অনুযায়ী বেছে নিন</h2></div>
       <Link to="/services" className="text-sm font-bold text-[#4c3fa3]">সব দেখুন →</Link></Rv>
     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {cats.map((c,i)=><Rv key={c._id} delay={i*70}><Link to={'/services/'+c.slug} className="hp-card flex h-full gap-4 p-6" style={{background:`linear-gradient(135deg,${c.color||'#4c3fa3'}14,#fff 70%)`}}>
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl font-extrabold text-white" style={{background:c.color||'#4c3fa3'}}>{c.icon}</span>
-        <span><b className="block text-xl">{c.name}</b><span className="mt-1 block text-[#16142b]/65">{c.description}</span><span className="mt-3 inline-block text-sm font-bold" style={{color:c.color||'#4c3fa3'}}>দেখুন →</span></span></Link></Rv>)}
+      {cats.map((c,i)=>{const col=c.color||'#4c3fa3';return <Rv key={c._id} delay={i*70}><Link to={'/services/'+c.slug} className="hp-card flex h-full gap-4 p-6" style={{background:`linear-gradient(135deg,${col}14,#fff 70%)`}}>
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#eee9fa] bg-white text-2xl font-extrabold text-white" style={c.image?undefined:{background:col,border:'none'}}>
+          {c.image?<Pic src={c.image} alt={c.name} fit="contain" color={col} label={c.icon||c.name?.[0]}/>:(c.icon||c.name?.[0])}</span>
+        <span><b className="block text-xl">{c.name}</b><span className="mt-1 block text-[#16142b]/65">{c.description}</span><span className="mt-3 inline-block text-sm font-bold" style={{color:col}}>দেখুন →</span></span></Link></Rv>})}
     </div></div></section>
 
   {/* 4. FESTIVE / OFFER BANNER (Banner model) */}
@@ -126,7 +132,7 @@ export default function Home(){
       <div className="hp-lights">{Array.from({length:22}).map((_,i)=><span key={i}/>)}</div>
       <div className="grid items-center gap-8 lg:grid-cols-[1fr_1.1fr]">
         <div>
-          <div className="flex flex-wrap gap-2"><span className="hp-pill">🔥 বিশেষ অফার</span><span className="hp-pill">🚚 দ্রুত ডেলিভারি</span></div>
+          <div className="flex flex-wrap gap-2"><span className="hp-pill">🔥 বিশেষ অফার</span><span className="hp-pill">🚚 জামালপুরে দ্রুত ডেলিভারি</span></div>
           <h2 className="mt-5 text-3xl font-extrabold md:text-4xl">{festive?.title||'অফিস ও ইভেন্টের জন্য কাস্টম প্রিন্ট'}<br/><span className="text-[#e5484d]">{festive?.subtitle||'বাল্ক অর্ডারে বিশেষ ছাড়'}</span></h2>
           <p className="mt-4 leading-7 text-[#16142b]/70">আপনার লোগো দিয়ে প্রিন্ট করা মগ, টি-শার্ট, ক্রেস্ট ও গিফট আইটেম – কর্মী, ক্লায়েন্ট ও পার্টনারদের জন্য।</p>
           <ul className="mt-4 space-y-2 text-sm text-[#16142b]/75"><li>⚡ জরুরি অর্ডারে এক্সপ্রেস ডেলিভারি পাওয়া যায়</li><li>🎁 কুপন কোড ব্যবহার করে ছাড় নিন চেকআউটে</li></ul>
@@ -134,7 +140,7 @@ export default function Home(){
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
           {(feat.length?feat:all).slice(0,4).map(p=><Link key={p._id} to={'/product/'+(p.slug||p._id)} className="hp-card overflow-hidden">
-            <div className="hp-img" style={{borderRadius:0}}>{p.image&&<img src={img(p.image)} alt={p.title} loading="lazy"/>}</div>
+            <div className="hp-img" style={{borderRadius:0}}><Pic src={p.image} alt={p.title} color={p.category?.color||'#6253a5'} label={p.title?.[0]}/></div>
             <div className="p-3"><b className="line-clamp-2 text-sm">{p.title}</b><div className="mt-1 text-sm font-extrabold text-[#4c3fa3]">{tk(p.price)}<small className="font-normal text-[#16142b]/50"> /{p.unit==='pcs'?'পিস':p.unit}</small></div></div></Link>)}
         </div>
       </div></div></Rv></div></section>
@@ -146,7 +152,7 @@ export default function Home(){
       <Link to="/services" className="text-sm font-bold text-[#4c3fa3]">সব পণ্য →</Link></Rv>
     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {featured.map((p,i)=><Rv key={p._id} delay={(i%4)*80}><div className="hp-card h-full overflow-hidden">
-        <Link to={'/product/'+(p.slug||p._id)} className="block"><div className="hp-img">{p.image&&<img src={img(p.image)} alt={p.title} loading="lazy"/>}</div></Link>
+        <Link to={'/product/'+(p.slug||p._id)} className="block"><div className="hp-img"><Pic src={p.image} alt={p.title} color={p.category?.color||'#6253a5'} label={p.title?.[0]}/></div></Link>
         <div className="p-4"><small className="text-[11px] font-bold uppercase tracking-wider text-[#16142b]/50">{p.category?.name||''}</small>
           <b className="mt-1 block text-lg leading-snug">{p.title}</b>
           <div className="mt-2 text-xl font-extrabold">{tk(p.price)} <small className="text-xs font-medium text-[#16142b]/50">/{p.pricing==='area'?'বর্গফুট':(p.unit==='pcs'?'পিস':p.unit)}</small></div>
@@ -154,7 +160,7 @@ export default function Home(){
           <Link to={'/product/'+(p.slug||p._id)} className="hp-btn hp-btn-out mt-3 w-full justify-center !py-2.5 text-xs uppercase tracking-wider">অর্ডার করুন</Link></div></div></Rv>)}
     </div></div></section>}
 
-  {/* 6. MORE PRODUCTS (hampers section er jaygay) */}
+  {/* 6. MORE PRODUCTS */}
   {more.length>0&&<section className="py-10"><div className="hp-wrap">
     <Rv><Pill>আরও পণ্য</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">আরও যা পাবেন</h2></Rv>
     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{more.map((p,i)=><Rv key={p._id} delay={i*80}><Card p={p}/></Rv>)}</div></div></section>}
@@ -194,7 +200,7 @@ export default function Home(){
           <div className="flex gap-2"><button className="hp-btn hp-btn-out !py-2 text-xs" onClick={()=>setStep((step+3)%4)}>আগের ধাপ</button><button className="hp-btn hp-btn-pri !py-2 text-xs" onClick={()=>setStep((step+1)%4)}>পরের ধাপ →</button></div></div>
       </div></div></div></section>
 
-  {/* 9. TESTIMONIALS (Testimonial model) / GALLERY */}
+  {/* 9. TESTIMONIALS / GALLERY */}
   {tms.length>0&&<section className="py-12"><div className="hp-wrap">
     <Rv className="flex items-end justify-between"><div><Pill>গ্রাহকদের কথা</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">আস্থার <span className="hp-grad">প্রমাণ</span></h2></div>
       <div className="flex gap-2"><button className="hp-btn hp-btn-out !px-4 !py-2" onClick={()=>setTm((tm+tms.length-1)%tms.length)}>‹</button><button className="hp-btn hp-btn-out !px-4 !py-2" onClick={()=>setTm((tm+1)%tms.length)}>›</button></div></Rv>
@@ -210,7 +216,7 @@ export default function Home(){
   </div></section>}
 
   {gal.length>0&&<section className="py-10"><div className="hp-wrap"><Rv><Pill>আমাদের কাজ</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">সাম্প্রতিক প্রিন্টের গ্যালারি</h2></Rv>
-    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{gal.slice(0,8).map((g,i)=><Rv key={g._id} delay={(i%4)*70}><div className="hp-card overflow-hidden"><div className="hp-img" style={{borderRadius:0}}><img src={img(g.image)} alt={g.title||''} loading="lazy"/></div>{g.title&&<div className="p-3 text-sm font-semibold">{g.title}</div>}</div></Rv>)}</div></div></section>}
+    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{gal.slice(0,8).map((g,i)=><Rv key={g._id} delay={(i%4)*70}><div className="hp-card overflow-hidden"><div className="hp-img" style={{borderRadius:0}}><Pic src={g.image} alt={g.title||''} label="🖼️"/></div>{g.title&&<div className="p-3 text-sm font-semibold">{g.title}</div>}</div></Rv>)}</div></div></section>}
 
   {/* 10. ADVANTAGE */}
   <section className="py-14"><div className="hp-wrap">
@@ -226,11 +232,11 @@ export default function Home(){
         {openF===i&&<p className="mt-2 leading-7 text-[#16142b]/70">{q.a}</p>}</div>)}</Rv>}
   </div></section>
 
-  {/* 11. CONTACT FORM (Inquiry model: name, phone, message) */}
+  {/* 11. CONTACT FORM */}
   <section className="py-14"><div className="hp-wrap grid items-center gap-10 lg:grid-cols-2">
     <Rv><Pill>যোগাযোগ</Pill><h2 className="mt-4 text-4xl font-extrabold md:text-5xl">বাল্ক অর্ডারের <span className="hp-grad">কোটেশন নিন</span></h2>
       <p className="mt-4 max-w-md leading-7 text-[#16142b]/65">বড় অর্ডার বা বিশেষ ডিজাইনের জন্য আপনার প্রয়োজন জানান। আমাদের টিম দাম ও সময় জানিয়ে দেবে।</p>
-      <div className="mt-8 space-y-3">{[['👤','ডেডিকেটেড সাপোর্ট','আপনার অর্ডারের জন্য ব্যক্তিগত সহায়তা।'],['🎨','ফ্রি ডিজাইন পরামর্শ','ব্র্যান্ডিং নিয়ে বিশেষজ্ঞ পরামর্শ।'],['🚚','ডেলিভারি সাপোর্ট','দ্রুত ও নিরাপদ ডেলিভারি।']]
+      <div className="mt-8 space-y-3">{[['👤','ডেডিকেটেড সাপোর্ট','আপনার অর্ডারের জন্য ব্যক্তিগত সহায়তা।'],['🎨','ফ্রি ডিজাইন পরামর্শ','ব্র্যান্ডিং নিয়ে বিশেষজ্ঞ পরামর্শ।'],['🚚','ডেলিভারি সাপোর্ট','জামালপুর পৌরসভার ভেতরে দ্রুত ও নিরাপদ ডেলিভারি।']]
         .map(([ic,t,d])=><div key={t} className="hp-card flex items-center gap-4 !rounded-2xl p-4"><span className="text-2xl">{ic}</span><div><b className="block">{t}</b><small className="text-[#16142b]/60">{d}</small></div></div>)}</div></Rv>
     <Rv delay={120}><form onSubmit={submit} className="hp-card !transform-none p-6 md:p-8">
       <h3 className="mb-5 text-xl font-extrabold">আমাদের মেসেজ পাঠান</h3>
