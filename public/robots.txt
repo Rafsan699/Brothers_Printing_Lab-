@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://brothers-printing-lab.vercel.app/sitemap.xml
