@@ -87,7 +87,7 @@ export default function Home(){
   {/* 1. HERO */}
   <section><div className="hp-wrap grid items-center gap-10 py-14 md:grid-cols-2 md:py-20">
     <div>
-      <Pill>⭐ গ্রাহকদের পছন্দের প্রিন্টিং শপ</Pill>
+      <Pill>গ্রাহকদের পছন্দের প্রিন্টিং শপ</Pill>
       <h1 className="mt-6 text-5xl font-extrabold leading-[1.15] md:text-7xl">
         প্রিন্টিং হোক<br/><span className="hp-brush hp-grad">সহজ ও নিখুঁত!</span></h1>
       <p className="mt-7 text-xl font-bold md:text-2xl"><Typing text="আমরা ডিজাইন করি। প্রিন্ট করি। পৌঁছে দিই।"/></p>
