@@ -1,0 +1,1 @@
+export default {content:['./index.html','./src/**/*.{js,jsx}'],theme:{extend:{colors:{ink:'#1c1b22',paper:'#fbfaf6',cy:'#00a6d6',ma:'#e6007e',ye:'#ffd400'},fontFamily:{head:['"Bricolage Grotesque"','"Hind Siliguri"','sans-serif'],body:['"Hind Siliguri"','system-ui','sans-serif']}}}}

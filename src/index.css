@@ -1,0 +1,9 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+body{@apply bg-paper text-ink font-body antialiased}
+h1,h2,h3{@apply font-head}
+.btn{@apply inline-flex items-center justify-center rounded-md bg-ink px-5 py-2.5 font-semibold text-white transition hover:bg-ma focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cy disabled:opacity-50}
+.btn-o{@apply inline-flex items-center justify-center rounded-md border-2 border-ink px-5 py-2 font-semibold transition hover:bg-ink hover:text-white}
+.inp{@apply w-full rounded-md border border-ink/25 bg-white px-3 py-2 focus:border-cy focus:outline-none focus:ring-2 focus:ring-cy/30}
+.wrap{@apply mx-auto w-full max-w-6xl px-4}
+.reg{background-image:radial-gradient(circle at 30% 30%,#00a6d6 0 28%,transparent 29%),radial-gradient(circle at 70% 30%,#e6007e 0 28%,transparent 29%),radial-gradient(circle at 50% 70%,#ffd400 0 28%,transparent 29%);mix-blend-mode:multiply}
+@media (prefers-reduced-motion:no-preference){.drift{animation:drift 9s ease-in-out infinite alternate}@keyframes drift{to{transform:translate(14px,-10px) rotate(6deg)}}}
