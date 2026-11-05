@@ -1,7 +1,8 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {api,img} from '../api.js';
 import Card from '../components/Card.jsx';
+import {Rv,Count} from '../components/Reveal.jsx';
 import '../home.css';
 
 /* ---------- helpers ---------- */
@@ -12,26 +13,10 @@ function Pic({src,alt='',label='',color='#4c3fa3',fit='cover',cls=''}){
   const [bad,setBad]=useState(false);
   useEffect(()=>setBad(false),[src]);
   if(!src||bad)return <div style={{width:'100%',height:'100%',minHeight:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,fontWeight:800,color:'#fff',background:`linear-gradient(135deg,${color},#b46a9a)`}}>{label}</div>;
-  return <img src={img(src)} alt={alt} loading="lazy" className={cls} style={{objectFit:fit}} onError={e=>{console.warn('Image load failed:',e.currentTarget.src);setBad(true)}}/>;
+  // lazy loading remove kora hoyeche jate druto scroll e chhobi late na ashe
+  return <img src={img(src)} alt={alt} loading="eager" decoding="async" className={cls} style={{objectFit:fit}} onError={e=>{console.warn('Image load failed:',e.currentTarget.src);setBad(true)}}/>;
 }
 
-// scroll reveal
-function Rv({children,className='',delay=0,as:T='div'}){
-  const r=useRef(null);const [on,setOn]=useState(false);
-  useEffect(()=>{const el=r.current;if(!el)return;
-    const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setOn(true);io.disconnect()}},{threshold:.12});
-    io.observe(el);return()=>io.disconnect()},[]);
-  return <T ref={r} className={'hp-rv '+(on?'in ':'')+className} style={{transitionDelay:delay+'ms'}}>{children}</T>;
-}
-// number count-up
-function Count({to,suffix=''}){
-  const r=useRef(null);const [v,setV]=useState(0);
-  useEffect(()=>{const el=r.current;if(!el)return;
-    const io=new IntersectionObserver(([e])=>{if(!e.isIntersecting)return;io.disconnect();
-      const t0=performance.now(),d=1400;const f=t=>{const p=Math.min((t-t0)/d,1);setV(Math.round(to*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(f)};requestAnimationFrame(f)},{threshold:.4});
-    io.observe(el);return()=>io.disconnect()},[to]);
-  return <span ref={r}>{v.toLocaleString('en-IN')}{suffix}</span>;
-}
 // typing text
 function Typing({text}){
   const [n,setN]=useState(0);
@@ -115,12 +100,12 @@ export default function Home(){
     <div className="hp-mq mt-8"><div className="hp-mq-in">{[...TRUST,...TRUST].map((t,i)=><span key={i} className="hp-tag">✔ {t}</span>)}</div></div>
   </div></section>
 
-  {/* 3. CATEGORIES (ekhon category-r logo/chhobi dekhay) */}
+  {/* 3. CATEGORIES (stagger column onujayi, jate onek card thakleo late na hoy) */}
   <section className="py-12"><div className="hp-wrap">
     <Rv className="flex items-end justify-between"><div><Pill>আমাদের সার্ভিস</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">ক্যাটাগরি অনুযায়ী বেছে নিন</h2></div>
       <Link to="/services" className="text-sm font-bold text-[#4c3fa3]">সব দেখুন →</Link></Rv>
     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {cats.map((c,i)=>{const col=c.color||'#4c3fa3';return <Rv key={c._id} delay={i*70}><Link to={'/services/'+c.slug} className="hp-card flex h-full gap-4 p-6" style={{background:`linear-gradient(135deg,${col}14,#fff 70%)`}}>
+      {cats.map((c,i)=>{const col=c.color||'#4c3fa3';return <Rv key={c._id} delay={(i%3)*50}><Link to={'/services/'+c.slug} className="hp-card flex h-full gap-4 p-6" style={{background:`linear-gradient(135deg,${col}14,#fff 70%)`}}>
         <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#eee9fa] bg-white text-2xl font-extrabold text-white" style={c.image?undefined:{background:col,border:'none'}}>
           {c.image?<Pic src={c.image} alt={c.name} fit="contain" color={col} label={c.icon||c.name?.[0]}/>:(c.icon||c.name?.[0])}</span>
         <span><b className="block text-xl">{c.name}</b><span className="mt-1 block text-[#16142b]/65">{c.description}</span><span className="mt-3 inline-block text-sm font-bold" style={{color:col}}>দেখুন →</span></span></Link></Rv>})}
@@ -151,7 +136,7 @@ export default function Home(){
       <p className="mt-2 text-[#16142b]/65">আমাদের সবচেয়ে বেশি অর্ডার হওয়া পণ্য। দাম প্রতি ইউনিটে।</p></div>
       <Link to="/services" className="text-sm font-bold text-[#4c3fa3]">সব পণ্য →</Link></Rv>
     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {featured.map((p,i)=><Rv key={p._id} delay={(i%4)*80}><div className="hp-card h-full overflow-hidden">
+      {featured.map((p,i)=><Rv key={p._id} delay={(i%4)*50}><div className="hp-card h-full overflow-hidden">
         <Link to={'/product/'+(p.slug||p._id)} className="block"><div className="hp-img"><Pic src={p.image} alt={p.title} color={p.category?.color||'#6253a5'} label={p.title?.[0]}/></div></Link>
         <div className="p-4"><small className="text-[11px] font-bold uppercase tracking-wider text-[#16142b]/50">{p.category?.name||''}</small>
           <b className="mt-1 block text-lg leading-snug">{p.title}</b>
@@ -163,7 +148,7 @@ export default function Home(){
   {/* 6. MORE PRODUCTS */}
   {more.length>0&&<section className="py-10"><div className="hp-wrap">
     <Rv><Pill>আরও পণ্য</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">আরও যা পাবেন</h2></Rv>
-    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{more.map((p,i)=><Rv key={p._id} delay={i*80}><Card p={p}/></Rv>)}</div></div></section>}
+    <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{more.map((p,i)=><Rv key={p._id} delay={i*50}><Card p={p}/></Rv>)}</div></div></section>}
 
   {/* 7. STATS (real data theke) */}
   <section className="py-12"><div className="hp-wrap"><Rv>
@@ -209,20 +194,20 @@ export default function Home(){
         <div className="flex justify-between"><span className="text-amber-400">{'★'.repeat(t.rating||5)}</span><span className="text-5xl leading-none text-amber-300/70">”</span></div>
         <p className="mt-3 min-h-[110px] leading-7 text-[#16142b]/80">“{t.text}”</p>
         <div className="mt-4 flex items-center gap-3 border-t border-[#16142b]/10 pt-4">
-          {t.image?<img src={img(t.image)} alt="" className="h-11 w-11 rounded-full object-cover"/>:<span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e9e3ff] font-bold text-[#4c3fa3]">{(t.name||'?')[0]}</span>}
+          {t.image?<img src={img(t.image)} alt="" decoding="async" className="h-11 w-11 rounded-full object-cover"/>:<span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e9e3ff] font-bold text-[#4c3fa3]">{(t.name||'?')[0]}</span>}
           <div><b className="block">{t.name}</b><small className="text-xs font-bold uppercase tracking-wide text-[#6b4fd8]">{t.role}</small></div></div></div>)}
     </div></div>
     <div className="mx-auto mt-6 flex max-w-xs items-center gap-3 text-xs font-bold"><span>{tm+1}</span><div className="hp-bar flex-1"><i style={{animation:'none',width:((tm+1)/tms.length*100)+'%',transition:'width .6s'}}/></div><span>{tms.length}</span></div>
   </div></section>}
 
   {gal.length>0&&<section className="py-10"><div className="hp-wrap"><Rv><Pill>আমাদের কাজ</Pill><h2 className="mt-3 text-3xl font-extrabold md:text-4xl">সাম্প্রতিক প্রিন্টের গ্যালারি</h2></Rv>
-    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{gal.slice(0,8).map((g,i)=><Rv key={g._id} delay={(i%4)*70}><div className="hp-card overflow-hidden"><div className="hp-img" style={{borderRadius:0}}><Pic src={g.image} alt={g.title||''} label="🖼️"/></div>{g.title&&<div className="p-3 text-sm font-semibold">{g.title}</div>}</div></Rv>)}</div></div></section>}
+    <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">{gal.slice(0,8).map((g,i)=><Rv key={g._id} delay={(i%4)*50}><div className="hp-card overflow-hidden"><div className="hp-img" style={{borderRadius:0}}><Pic src={g.image} alt={g.title||''} label="🖼️"/></div>{g.title&&<div className="p-3 text-sm font-semibold">{g.title}</div>}</div></Rv>)}</div></div></section>}
 
   {/* 10. ADVANTAGE */}
   <section className="py-14"><div className="hp-wrap">
     <Rv className="text-center"><Pill>ব্রাদার্স প্রিন্টিং ল্যাবের সুবিধা</Pill><h2 className="mt-4 text-4xl font-extrabold md:text-5xl">আমরা যা <span className="hp-grad italic">করি</span></h2>
       <p className="mt-3 text-[#16142b]/60">প্রিন্টিং অভিজ্ঞতাকে আমরা নতুন করে সাজিয়েছি।</p></Rv>
-    <div className="mt-10 grid gap-5 md:grid-cols-2">{ADV.map((a,i)=><Rv key={i} delay={i*90}><div className="hp-card h-full p-8">
+    <div className="mt-10 grid gap-5 md:grid-cols-2">{ADV.map((a,i)=><Rv key={i} delay={(i%2)*60}><div className="hp-card h-full p-8">
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f1ebff] text-2xl">{a.ic}</span>
       <h3 className="mt-5 text-2xl font-extrabold">{a.t}</h3><p className="mt-2 leading-7 text-[#16142b]/65">{a.d}</p>
       <Link to={a.to} className="mt-4 inline-block text-sm font-bold text-[#4c3fa3]">{a.l} →</Link></div></Rv>)}</div>
@@ -238,7 +223,7 @@ export default function Home(){
       <p className="mt-4 max-w-md leading-7 text-[#16142b]/65">বড় অর্ডার বা বিশেষ ডিজাইনের জন্য আপনার প্রয়োজন জানান। আমাদের টিম দাম ও সময় জানিয়ে দেবে।</p>
       <div className="mt-8 space-y-3">{[['👤','ডেডিকেটেড সাপোর্ট','আপনার অর্ডারের জন্য ব্যক্তিগত সহায়তা।'],['🎨','ফ্রি ডিজাইন পরামর্শ','ব্র্যান্ডিং নিয়ে বিশেষজ্ঞ পরামর্শ।'],['🚚','ডেলিভারি সাপোর্ট','জামালপুর পৌরসভার ভেতরে দ্রুত ও নিরাপদ ডেলিভারি।']]
         .map(([ic,t,d])=><div key={t} className="hp-card flex items-center gap-4 !rounded-2xl p-4"><span className="text-2xl">{ic}</span><div><b className="block">{t}</b><small className="text-[#16142b]/60">{d}</small></div></div>)}</div></Rv>
-    <Rv delay={120}><form onSubmit={submit} className="hp-card !transform-none p-6 md:p-8">
+    <Rv delay={100}><form onSubmit={submit} className="hp-card !transform-none p-6 md:p-8">
       <h3 className="mb-5 text-xl font-extrabold">আমাদের মেসেজ পাঠান</h3>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="text-xs font-bold uppercase tracking-wider text-[#16142b]/60">নাম<input required className="hp-in mt-1 normal-case" placeholder="আপনার নাম" value={f.name} onChange={e=>setF({...f,name:e.target.value})}/></label>

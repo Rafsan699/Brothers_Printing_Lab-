@@ -1,8 +1,8 @@
-
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import Card, { Rv, Skel } from '../components/Card.jsx';
+import Card, { Skel } from '../components/Card.jsx';
+import { Rv } from '../components/Reveal.jsx';
 import './Shop.css';
 
 const SORTS = [
@@ -12,6 +12,85 @@ const SORTS = [
   ['pop', 'জনপ্রিয়']
 ];
 
+const PAGE_SIZE = 12; // 4 column x 3 row
+
+// 1 … 4 5 6 … 20 moto page number list
+const pageList = (c, t) => {
+  if (t <= 7) return Array.from({ length: t }, (_, i) => i + 1);
+  const s = new Set([1, t, c - 1, c, c + 1]);
+  if (c <= 3) [2, 3, 4].forEach(n => s.add(n));
+  if (c >= t - 2) [t - 1, t - 2, t - 3].forEach(n => s.add(n));
+  const a = [...s].filter(n => n >= 1 && n <= t).sort((x, y) => x - y);
+  const out = [];
+  a.forEach((n, i) => {
+    if (i && n - a[i - 1] > 1) out.push('gap' + n);
+    out.push(n);
+  });
+  return out;
+};
+
+function Pager({ page, total, count, onChange }) {
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, count);
+
+  return (
+    <nav className="shop-pager" aria-label="Pagination">
+      <p className="shop-pager-info">
+        Showing <b>{from}–{to}</b> of <b>{count}</b> products
+      </p>
+
+      <div className="shop-pager-ctrl">
+        <button
+          type="button"
+          className="shop-page-btn shop-page-nav"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          aria-label="Previous page"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+          <span>Previous</span>
+        </button>
+
+        <div className="shop-page-numbers">
+          {pageList(page, total).map(n =>
+            typeof n === 'string' ? (
+              <span key={n} className="shop-page-gap">…</span>
+            ) : (
+              <button
+                type="button"
+                key={n}
+                className={'shop-page-btn' + (n === page ? ' active' : '')}
+                aria-current={n === page ? 'page' : undefined}
+                aria-label={`Page ${n}`}
+                onClick={() => n !== page && onChange(n)}
+              >
+                {n}
+              </button>
+            )
+          )}
+        </div>
+
+        <span className="shop-page-mobile">Page {page} / {total}</span>
+
+        <button
+          type="button"
+          className="shop-page-btn shop-page-nav"
+          disabled={page >= total}
+          onClick={() => onChange(page + 1)}
+          aria-label="Next page"
+        >
+          <span>Next</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export default function Shop() {
   const { cat } = useParams();
 
@@ -20,6 +99,30 @@ export default function Shop() {
   const [q, setQ] = useState('');
   const [load, setLoad] = useState(true);
   const [sort, setSort] = useState('new');
+
+  // Pagination (page URL e thake: ?page=2, back button o kaj kore)
+  const [sp, setSp] = useSearchParams();
+  const topRef = useRef(null);
+  const rawPage = Math.max(1, parseInt(sp.get('page'), 10) || 1);
+
+  const setPage = (n, scroll = false) => {
+    const x = new URLSearchParams(sp);
+    if (n <= 1) x.delete('page');
+    else x.set('page', String(n));
+    setSp(x, { replace: !scroll });
+
+    if (scroll) {
+      requestAnimationFrame(() => {
+        const el = topRef.current;
+        if (el) {
+          window.scrollTo({
+            top: el.getBoundingClientRect().top + window.scrollY - 90,
+            behavior: 'smooth'
+          });
+        }
+      });
+    }
+  };
 
   // Dynamic categories
   useEffect(() => {
@@ -79,6 +182,11 @@ export default function Shop() {
     return a;
   }, [ps, sort]);
 
+  // Current page er product
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const page = Math.min(rawPage, totalPages);
+  const paged = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <main className="shop-page">
 
@@ -131,13 +239,13 @@ export default function Shop() {
             type="search"
             placeholder="Search products..."
             value={q}
-            onChange={e => setQ(e.target.value)}
+            onChange={e => { setQ(e.target.value); setPage(1); }}
           />
 
           {q && (
             <button
               className="shop-clear"
-              onClick={() => setQ('')}
+              onClick={() => { setQ(''); setPage(1); }}
               aria-label="Clear search"
             >
               ✕
@@ -179,7 +287,7 @@ export default function Shop() {
 
           <select
             value={sort}
-            onChange={e => setSort(e.target.value)}
+            onChange={e => { setSort(e.target.value); setPage(1); }}
           >
             {SORTS.map(([value, label]) => (
               <option key={value} value={value}>
@@ -193,7 +301,7 @@ export default function Shop() {
       </section>
 
       {/* PRODUCT SECTION */}
-      <section className="shop-products">
+      <section className="shop-products" ref={topRef}>
 
         {!load && (
           <div className="shop-result-info">
@@ -223,7 +331,7 @@ export default function Shop() {
             {(q || cat) && (
               <Link
                 to="/services"
-                onClick={() => setQ('')}
+                onClick={() => { setQ(''); setPage(1); }}
                 className="shop-reset"
               >
                 Explore All Products
@@ -234,7 +342,7 @@ export default function Shop() {
         ) : (
 
           <div className="shop-grid">
-            {list.map((p, i) => (
+            {paged.map((p, i) => (
               <div
                 className="shop-product"
                 key={p._id}
@@ -244,6 +352,15 @@ export default function Shop() {
             ))}
           </div>
 
+        )}
+
+        {!load && list.length > PAGE_SIZE && (
+          <Pager
+            page={page}
+            total={totalPages}
+            count={list.length}
+            onChange={n => setPage(n, true)}
+          />
         )}
 
       </section>

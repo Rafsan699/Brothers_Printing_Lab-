@@ -1,4 +1,3 @@
-
 /* =================================
    SHOP PAGE
 ================================= */
@@ -335,5 +334,125 @@
 
   .shop-result-info {
     font-size: 11px;
+  }
+}
+
+/* =================================
+   PAGINATION
+================================= */
+
+.shop-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1px solid #e8e6ef;
+}
+
+.shop-pager-info {
+  margin: 0;
+  font-size: 12px;
+  color: #898696;
+}
+
+.shop-pager-info b {
+  color: #353342;
+  font-weight: 700;
+}
+
+.shop-pager-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shop-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shop-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e5e2ed;
+  border-radius: 30px;
+  background: #fff;
+  color: #4a4759;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.shop-page-btn:hover:not(:disabled):not(.active) {
+  color: #6551ad;
+  border-color: #a99cdb;
+  background: #faf9ff;
+  transform: translateY(-1px);
+}
+
+.shop-page-btn.active {
+  color: #fff;
+  background: #6050a5;
+  border-color: #6050a5;
+  box-shadow: 0 4px 12px #6050a52e;
+  cursor: default;
+}
+
+.shop-page-btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.shop-page-nav {
+  padding: 0 16px;
+}
+
+.shop-page-gap {
+  min-width: 22px;
+  text-align: center;
+  color: #9a97a8;
+  font-size: 13px;
+}
+
+.shop-page-mobile {
+  display: none;
+  font-size: 12px;
+  font-weight: 650;
+  color: #4a4759;
+  min-width: 70px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .shop-pager {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .shop-pager-info {
+    text-align: center;
+  }
+
+  .shop-pager-ctrl {
+    justify-content: space-between;
+  }
+
+  .shop-page-numbers {
+    display: none;
+  }
+
+  .shop-page-mobile {
+    display: inline-block;
   }
 }

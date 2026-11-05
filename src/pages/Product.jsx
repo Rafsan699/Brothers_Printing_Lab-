@@ -1,7 +1,8 @@
 import {useEffect,useState} from 'react';
 import {Link,useNavigate,useParams} from 'react-router-dom';
 import {api,uploadFile,tk2,lineTotal} from '../api.js';
-import Card,{Thumb,Rv} from '../components/Card.jsx';
+import Card,{Thumb} from '../components/Card.jsx';
+import {Rv} from '../components/Reveal.jsx';
 import {useCart} from '../cart.jsx';
 
 export default function Product(){

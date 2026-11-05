@@ -1,7 +1,11 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { img, tk2 } from '../api.js';
+import { Rv } from './Reveal.jsx';
 import './card.css';
+
+// Purono jaygay jeno kaj kore (import {Rv} from '../components/Card.jsx')
+export { Rv };
 
 // Product image (load fail korle gradient fallback dekhay)
 export const Thumb = ({ p, cls = '', w = 600 }) => {
@@ -13,7 +17,7 @@ export const Thumb = ({ p, cls = '', w = 600 }) => {
       src={img(p.image, w)}
       decoding="async"
       alt={p.title}
-      loading="lazy"
+      loading="eager"
       className={'shop-thumb ' + cls}
       onError={e => {
         console.warn('Image load failed:', e.currentTarget.src);
@@ -30,45 +34,6 @@ export const Thumb = ({ p, cls = '', w = 600 }) => {
       }}
     >
       {p.category?.icon || p.title?.[0] || 'P'}
-    </div>
-  );
-};
-
-// Scroll reveal
-export const Rv = ({ children, d = 0, className = '' }) => {
-  const r = useRef(null);
-
-  useEffect(() => {
-    const el = r.current;
-    if (!el) return;
-
-    if (!('IntersectionObserver' in window)) {
-      el.classList.add('in');
-      return;
-    }
-
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          el.classList.add('in');
-          io.disconnect();
-        }
-      },
-      { threshold: 0.08 }
-    );
-
-    io.observe(el);
-
-    return () => io.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={r}
-      className={'hp-rv ' + className}
-      style={{ transitionDelay: d + 'ms' }}
-    >
-      {children}
     </div>
   );
 };

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api, tk2 } from '../api.js';
 import { useSettings, wa } from '../settings.jsx';
-import { Rv } from '../components/Card.jsx';
+import { Rv, Count } from '../components/Reveal.jsx';
 
 const STEPS = ['Pending', 'Confirmed', 'Designing', 'Printing', 'Ready', 'Delivered'];
 
@@ -230,51 +230,6 @@ export function Track() {
 
 
 // ==============================
-// COUNT UP ANIMATION
-// ==============================
-
-function Count({ to, suffix = '' }) {
-
-  const r = useRef();
-  const [v, setV] = useState(0);
-
-  useEffect(() => {
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-
-      io.disconnect();
-
-      const t0 = performance.now();
-
-      const tick = t => {
-        const k = Math.min(1, (t - t0) / 1400);
-
-        setV(Math.round(
-          to * (1 - Math.pow(1 - k, 3))
-        ));
-
-        if (k < 1) requestAnimationFrame(tick);
-      };
-
-      requestAnimationFrame(tick);
-
-    }, { threshold: .4 });
-
-    io.observe(r.current);
-
-    return () => io.disconnect();
-
-  }, [to]);
-
-  return (
-    <b ref={r} className="hp-grad">
-      {v.toLocaleString('bn-BD')}{suffix}
-    </b>
-  );
-}
-
-
-// ==============================
 // ABOUT / INFO PAGE
 // ==============================
 
@@ -359,7 +314,7 @@ export function About() {
         {stats.map(([n, sVal, l], i) => (
           <Rv key={l} d={i * 90}>
             <div className="hp-card hp-stat">
-              <Count to={n} suffix={sVal} />
+              <b className="hp-grad"><Count to={n} suffix={sVal} locale="bn-BD" /></b>
               <span className="text-sm hp-mut">{l}</span>
             </div>
           </Rv>
