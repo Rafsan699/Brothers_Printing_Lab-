@@ -1,4 +1,3 @@
-
 import {Link,NavLink,Outlet,useLocation} from 'react-router-dom';
 import {useEffect,useRef,useState} from 'react';
 import {api} from '../api.js';
@@ -8,6 +7,7 @@ import '../home.css';
 import '../pages.css';
 import './layout-icons.css'; // <-- notun (path tomar folder structure onujayi thik koro)
 import printingLogo from './printing.jpg';
+import ErrorBoundary from './ErrorBoundary.jsx';
 
 // ---------- ICONS ----------
 const CartIcon = () => (
@@ -33,7 +33,7 @@ const WaIcon = () => (
 
 // LOGO
 export const Logo = () => {
-  const s = useSettings();
+  const s = useSettings()||{};
 
   return (
     <span className="flex items-center gap-2.5">
@@ -51,11 +51,13 @@ export const Logo = () => {
 };
 
 export default function Layout(){
-  const s=useSettings(),{items}=useCart(),{pathname}=useLocation();
+  const s=useSettings()||{},{items}=useCart(),{pathname}=useLocation();
 
   const [open,setOpen]=useState(false);
   const [cats,setCats]=useState([]);
-  const [sc,setSc]=useState(0);
+  const [scrolled,setScrolled]=useState(false);
+  const [showTop,setShowTop]=useState(false);
+  const progRef=useRef(null);
   const [bump,setBump]=useState(false);
 
   const first=useRef(true);
@@ -63,31 +65,35 @@ export default function Layout(){
   // Load categories
   useEffect(()=>{
     api('/api/categories')
-      .then(setCats)
+      .then(d=>Array.isArray(d)&&setCats(d))
       .catch(()=>{});
   },[]);
 
-  // Scroll progress
+  // Scroll progress (rAF throttle; scroll e puro Layout re-render hoy na)
   useEffect(()=>{
+    let raf=0;
     const f=()=>{
+      raf=0;
       const h=document.documentElement;
-      setSc(
-        window.scrollY/
-        Math.max(1,h.scrollHeight-h.clientHeight)*100
-      );
+      const p=window.scrollY/Math.max(1,h.scrollHeight-h.clientHeight)*100;
+      if(progRef.current)progRef.current.style.width=p+'%';
+      setScrolled(p>1);
+      setShowTop(p>12);
     };
-
+    const on=()=>{if(!raf)raf=requestAnimationFrame(f)};
     f();
-
-    window.addEventListener('scroll',f,{passive:true});
-
-    return ()=>window.removeEventListener('scroll',f);
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',on);
+    return ()=>{
+      window.removeEventListener('scroll',on);
+      window.removeEventListener('resize',on);
+      if(raf)cancelAnimationFrame(raf);
+    };
   },[]);
 
   // Route change
   useEffect(()=>{
-    window.scrollTo({top:0,behavior:'smooth'});
-    setOpen(false);
+    setOpen(false); // scroll top App.jsx er Top() kore
   },[pathname]);
 
   // Cart animation
@@ -131,7 +137,8 @@ export default function Layout(){
       {/* SCROLL PROGRESS */}
       <div
         className="hp-prog"
-        style={{width:sc+'%'}}
+        ref={progRef}
+        style={{width:'0%'}}
       />
 
       {/* ANNOUNCEMENT */}
@@ -155,7 +162,7 @@ export default function Layout(){
       )}
 
       {/* HEADER */}
-      <header className={'hp-head'+(sc>1?' sc':'')}>
+      <header className={'hp-head'+(scrolled?' sc':'')}>
 
         <div className="hp-wrap relative flex items-center justify-between py-3">
 
@@ -218,7 +225,7 @@ export default function Layout(){
       <main className="flex-1" key={pathname}>
         {/* opacity-only animation: transform dile position:fixed (sticky order bar) bhenge jay */}
         <div className="hp-page">
-          <Outlet/>
+          <ErrorBoundary resetKey={pathname}><Outlet/></ErrorBoundary>
         </div>
       </main>
 
@@ -338,7 +345,7 @@ export default function Layout(){
               behavior:'smooth'
             })
           }
-          className={'lx-fab lx-top'+(sc>12?'':' off')}
+          className={'lx-fab lx-top'+(showTop?'':' off')}
         >
           <UpIcon/>
         </button>

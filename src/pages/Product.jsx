@@ -12,7 +12,7 @@ export default function Product(){
   useEffect(()=>{setP(null);setErr('');setFname('');
     api('/api/products/'+slug).then(d=>{setP(d);
       setF({qty:d.minQty||1,width:'',height:'',note:'',designFile:'',options:Object.fromEntries((d.options||[]).map(o=>[o.name,o.values[0]]))});
-      if(d.category?.slug)api('/api/products?category='+d.category.slug).then(r=>setRel(r.filter(x=>x._id!==d._id).slice(0,4))).catch(()=>{})
+      if(d.category?.slug)api('/api/products?category='+d.category.slug).then(r=>setRel((Array.isArray(r)?r:[]).filter(x=>x._id!==d._id).slice(0,4))).catch(()=>{})
     }).catch(e=>setErr(e.message))},[slug]);
 
   if(err)return <p className="hp-wrap py-10">{err}</p>;
@@ -33,7 +33,7 @@ export default function Product(){
 
     <div className="grid gap-10 md:grid-cols-2">
       <Rv><div className="hp-card hp-img group relative !rounded-[24px] md:sticky md:top-24" style={{aspectRatio:'1/1'}}>
-        <Thumb p={p} cls="h-full w-full"/>{p.featured&&<span className="hp-badge">★ জনপ্রিয়</span>}</div></Rv>
+        <Thumb p={p} w={900} cls="h-full w-full"/>{p.featured&&<span className="hp-badge">★ জনপ্রিয়</span>}</div></Rv>
 
       <Rv d={100}><div>
         {p.category?.name&&<span className="hp-cat">{p.category.name}</span>}

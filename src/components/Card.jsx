@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { img, tk2 } from '../api.js';
 import './card.css';
 
 // Product image (load fail korle gradient fallback dekhay)
-export const Thumb = ({ p, cls = '' }) => {
+export const Thumb = ({ p, cls = '', w = 600 }) => {
   const [bad, setBad] = useState(false);
   useEffect(() => setBad(false), [p.image]);
 
   return p.image && !bad ? (
     <img
-      src={img(p.image)}
+      src={img(p.image, w)}
+      decoding="async"
       alt={p.title}
       loading="lazy"
       className={'shop-thumb ' + cls}
@@ -106,7 +107,7 @@ const Arrow = () => (
 );
 
 // Product Card
-export default function Card({ p, i = 0, onQuick }) {
+function Card({ p, i = 0, onQuick }) {
   // Cut-off price: tomar API te field er nam onno hole ei line change koro
   const old = p.mrp || p.oldPrice || 0;
   const off = old > p.price ? Math.round(((old - p.price) / old) * 100) : 0;
@@ -194,3 +195,6 @@ export default function Card({ p, i = 0, onQuick }) {
     </Rv>
   );
 }
+
+// Home er autoplay timer e Card gulo bar bar re-render hobe na
+export default memo(Card);

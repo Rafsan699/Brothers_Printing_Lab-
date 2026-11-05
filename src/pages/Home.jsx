@@ -61,9 +61,9 @@ export default function Home(){
   const ok=fn=>fn.catch(()=>[]);
 
   useEffect(()=>{
-    api('/api/categories').then(setCats).catch(()=>{});
-    api('/api/products?featured=1').then(setFeat).catch(()=>{});
-    api('/api/products').then(setAll).catch(()=>{});
+    api('/api/categories').then(d=>Array.isArray(d)&&setCats(d)).catch(()=>{});
+    api('/api/products?featured=1').then(d=>Array.isArray(d)&&setFeat(d)).catch(()=>{});
+    api('/api/products').then(d=>Array.isArray(d)&&setAll(d)).catch(()=>{});
     ok(api('/api/banners')).then(d=>Array.isArray(d)&&setBan(d));
     ok(api('/api/testimonials')).then(d=>Array.isArray(d)&&setTms(d));
     ok(api('/api/gallery')).then(d=>Array.isArray(d)&&setGal(d));
